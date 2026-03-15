@@ -7,7 +7,7 @@ import pyscreeze # type: ignore
 
 # Character File Name (INPUT)
 BASE_PATH = "public/characters/"
-CHAR_FILE_NAME = ["sylvia1"]
+CHAR_FILE_NAME = ["ventana1","liberta1"]
 TARGET_CHAR_IMAGE = [f"{BASE_PATH}{CHAR}.png" for CHAR in CHAR_FILE_NAME]
 
 
@@ -46,7 +46,7 @@ DELAY_BETWEEN_SLOT_CHECKS = 0.02
 DELAY_BEFORE_RETRY = 0.2
 
 # Image search confidence (0.0 to 1.0, higher is stricter)
-FIVE_STAR_CONFIDENCE = 0.8 
+FIVE_STAR_CONFIDENCE = 0.8
 TARGET_CHAR_CONFIDENCE = 0.7
 
 # -----------------------------------
@@ -91,25 +91,38 @@ except Exception as e:
 
 
 
-#Main Function
-try:
- total_pull = 0
- while keep_script_running:
-  # Draw again and skip-------------------------
+# ****** DEBUG ZONE 🛠️ **********
+
+#Debug for buttons position
+'''pyautogui.click(DRAW_AGAIN_X, DRAW_AGAIN_Y)
+time.sleep(DELAY_AFTER_CLICK)
+pyautogui.press('enter')
+time.sleep(DELAY_AFTER_CLICK)
+
+for y in range(10): 
+    pyautogui.click(SKIP_X, SKIP_Y)
+    time.sleep(0.2) '''
+
+#Debug for specific slot
+""" slot_to_check = 9
+current_slot_x_stars = FIRST_SLOT_LEFT_X_STARS + (slot_to_check * (SLOT_WIDTH_STARS + SLOT_SPACING))
+star_search_region = (current_slot_x_stars, SLOT_TOP_Y_STARS, SLOT_WIDTH_STARS, SLOT_BOTTOM_Y_STARS - SLOT_TOP_Y_STARS)
+location = pyautogui.locateOnScreen(FIVE_STAR_IMAGE, confidence=FIVE_STAR_CONFIDENCE, region=star_search_region)
+
+if location:
+     print(f"Found 5-star at {location}")
+     pyautogui.click(pyautogui.center(location)) 
+else:
+     print("5-star not found in this slot.") """
+
+#Debug for search loop
+total_pull = 0
+while keep_script_running:
   if script_active: 
-    pyautogui.click(DRAW_AGAIN_X, DRAW_AGAIN_Y)
-    time.sleep(DELAY_AFTER_CLICK)
-    pydirectinput.press('enter')    
-    time.sleep(DELAY_AFTER_CLICK)
-    for y in range(4): 
-      pyautogui.click(SKIP_X, SKIP_Y)
-      time.sleep(0.2)
-    time.sleep(DELAY_AFTER_PULL_SEQUENCE)
-  #---------------------------------------------
-  
+
     target_character_found_this_pull = False
     found_5_star_count = 0
-    
+
     # ------[][][][][] Loop for Search on each slot [][][][][]---------
 
     for i in range(NUMBER_OF_SLOTS_TO_CHECK):
@@ -126,12 +139,12 @@ try:
      #--------------------------------
 
     # Check if 5 star found in current slot
-     try:
-         if pyautogui.locateOnScreen(FIVE_STAR_IMAGE, confidence=FIVE_STAR_CONFIDENCE, region=star_search_region):
-            found_5_star_count += 1
-            #print(f"5 Star Found at SLOT #{current_slot_num}")
+     try: 
+        if pyautogui.locateOnScreen(FIVE_STAR_IMAGE, confidence=FIVE_STAR_CONFIDENCE, region=star_search_region):
+         found_5_star_count += 1
+         print(f"5 Star Found at SLOT #{current_slot_num}")
      except Exception as e: 
-        pass
+        pass 
     #-------------------------------------
     
     #====================================================
@@ -146,24 +159,28 @@ try:
      target_search_region = (current_slot_x_target, TARGET_CHAR_SLOT_TOP_Y, TARGET_CHAR_SLOT_WIDTH, TARGET_CHAR_SLOT_BOTTOM_Y - TARGET_CHAR_SLOT_TOP_Y)
     #--------------------------------
     
-    # Check if target was already found
+    # Check if all target characters already found 
      if not target_character_found_this_pull:
         # Check if image pixel match with the target
-      target_found_count = 0
+      target_found = []
       for char_file_name in TARGET_CHAR_IMAGE:
-        try:
-            if pyautogui.locateOnScreen(char_file_name, confidence=TARGET_CHAR_CONFIDENCE, region=target_search_region):
-                target_found_count += 1
-                if target_found_count == len(TARGET_CHAR_IMAGE):
-                    target_character_found_this_pull = True
-        except Exception as e:
-                pass
+        if char_file_name in target_found:
+            continue
+        else:
+            try:
+                if pyautogui.locateOnScreen(char_file_name, confidence=TARGET_CHAR_CONFIDENCE, region=target_search_region):
+                    print(f"Found {char_file_name} at Slot #{current_slot_num}")
+                    target_found.append(char_file_name)
+                    if len(target_found) >= len(TARGET_CHAR_IMAGE):
+                        target_character_found_this_pull = True
+            except Exception as e:
+                    print(f"{char_file_name} not found At slot #{current_slot_num}")
 
 
     #-----STOP CONDITION-------
     if (found_5_star_count>=REQUIRED_5_STAR_COUNT and target_character_found_this_pull) :
          total_pull = total_pull + 10
-         print(f"Success! Found {found_5_star_count} 5-star with total {total_pull} pulls! Stopping script. Press Esc to Exit.")
+         print(f"Condition met with {total_pull} pulls! Stopping script. Press Esc to Exit.")
          script_active = False 
          sound_file = "public/sound/tuturu.wav"
          try:
@@ -175,17 +192,10 @@ try:
          total_pull = total_pull + 10
          print(f"Conditions not met, re-pulling after a delay... current total pulls {total_pull}")
          time.sleep(DELAY_BEFORE_RETRY)
+    script_active = False 
+    print("SCRIPT END")
   else:
     time.sleep(0.1) 
-
-except KeyboardInterrupt: 
-    print("\n--- Script interrupted by user (Ctrl+C). Exiting. ---")
-
-finally:
-    print("--- Cleaning up hotkeys... ---")
-    keyboard.unhook_all_hotkeys() 
-    print("--- Script fully exited. ---")
-
-
-
-
+   #----------------------------
+#
+# **********************************
